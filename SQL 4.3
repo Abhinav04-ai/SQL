@@ -1,0 +1,68 @@
+-- =========================================================
+-- STEP 1: Create and Use Database
+-- =========================================================
+CREATE DATABASE IF NOT EXISTS db_43xngm5e9;
+USE db_43xngm5e9;
+
+-- =========================================================
+-- STEP 2: Drop Table If Exists and Create New Table
+-- =========================================================
+DROP TABLE IF EXISTS StudentEnrollments;
+
+CREATE TABLE StudentEnrollments (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(100),
+    course_id VARCHAR(10),
+    enrollment_date DATE
+);
+
+-- =========================================================
+-- STEP 3: Insert Initial Data
+-- =========================================================
+INSERT INTO StudentEnrollments VALUES
+(1, 'Ashish', 'CSE101', '2024-06-01'),
+(2, 'Smaran', 'CSE102', '2024-06-01'),
+(3, 'Vaibhav', 'CSE103', '2024-06-01');
+
+-- =========================================================
+-- STEP 4: Simple Transaction (Simulated)
+-- =========================================================
+START TRANSACTION;
+UPDATE StudentEnrollments
+SET enrollment_date = '2024-06-05'
+WHERE student_id = 1;
+COMMIT;
+
+-- =========================================================
+-- STEP 5: MVCC Behavior Demonstration (Repeatable Read)
+-- =========================================================
+-- Set isolation level for this session
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+-- Start transaction and select a record
+START TRANSACTION;
+
+-- This will read the current snapshot of the data
+SELECT * FROM StudentEnrollments WHERE student_id = 1;
+
+-- (In another session, you would run this):
+-- START TRANSACTION;
+-- UPDATE StudentEnrollments SET enrollment_date = '2024-07-10' WHERE student_id = 1;
+-- COMMIT;
+
+-- Back in this session: still see the old value (due to MVCC)
+SELECT * FROM StudentEnrollments WHERE student_id = 1;
+
+-- Commit to release snapshot
+COMMIT;
+
+-- =========================================================
+-- STEP 6: Final State of Table
+-- =========================================================
+SELECT * FROM StudentEnrollments;
+
+-- =========================================================
+-- STEP 7: Explanation of MVCC Behavior (As Output Messages)
+-- =========================================================
+SELECT 'Without MVCC: Reader blocks until writer commits.' AS info;
+SELECT 'With MVCC: Reader sees snapshot even while writer updates.' AS info;
